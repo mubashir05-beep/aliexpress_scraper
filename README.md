@@ -57,7 +57,7 @@ This is a web scraping tool for extracting product data from AliExpress, a popul
 6. Run the scraper:
 
     ```bash
-    python main.py
+    python main.py --selenium --output categories
     ```
 
    This will start scraping products from the provided category URL and export the data to the configured export method (MongoDB or Excel).
