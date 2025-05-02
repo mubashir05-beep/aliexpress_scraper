@@ -53,130 +53,103 @@ class AliExpressScraper:
         if self.use_selenium:
             self.setup_selenium()
 
-    def download_images(self, image_urls, save_dir, prefix):
-        """Download images from URLs and save them to disk with improved error handling"""
+    def download_images(self, image_urls, folder_path, prefix="img"):
+        """Download images with unique descriptive names"""
+        downloaded_files = []
+
         for i, url in enumerate(image_urls):
             try:
-                # Skip if URL is empty
-                if not url:
-                    continue
+                # Create a filename with the prefix and index
+                filename = f"{prefix}_{i + 1}.jpg"
+                file_path = os.path.join(folder_path, filename)
 
-                # Fix protocol-relative URLs
-                if url.startswith("//"):
-                    url = "https:" + url
-
-                # Skip if not a valid URL
-                if not url.startswith("http"):
-                    print(f"Skipping invalid image URL: {url}")
-                    continue
-
-                # Fix AliExpress image URLs - remove size restrictions and other parameters
-                # This is crucial for 2025 AliExpress image URLs
-                url = url.split("_")[0]  # Remove size restrictions like _220x220q75
-                if ".jpg_" in url or ".png_" in url or ".webp_" in url:
-                    url = url.split("_")[0]
-
-                # Remove .avif extension if present (common in 2025 AliExpress)
-                if url.endswith(".avif"):
-                    url = url[:-5]
-
-                # Ensure URL ends with a valid image extension
-                if not any(
-                    url.endswith(ext) for ext in [".jpg", ".jpeg", ".png", ".webp"]
-                ):
-                    url = url + ".jpg"  # Default to jpg if no extension
-
-                print(f"Attempting to download: {url}")
-
-                # Add delay between image downloads
-                time.sleep(random.uniform(1, 3))
-
-                # Make request with headers
-                headers = self.headers.copy()
-                headers["Referer"] = "https://www.aliexpress.com/"
-
-                # Add additional headers that might help bypass restrictions
-                headers["Accept"] = "image/avif,image/webp,image/apng,image/*,*/*;q=0.8"
-                headers["Accept-Encoding"] = "gzip, deflate, br"
-
-                # Set a short timeout for image downloads
-                response = requests.get(url, headers=headers, stream=True, timeout=30)
-
+                # Download the image
+                response = requests.get(url, headers=self.headers, timeout=30)
                 if response.status_code == 200:
-                    # Check if response is actually an image
-                    content_type = response.headers.get("content-type", "")
-                    if not ("image" in content_type.lower()):
-                        print(f"Skipping non-image content: {content_type}")
-                        continue
-
-                    # Determine file extension
-                    if "jpeg" in content_type or "jpg" in content_type:
-                        ext = "jpg"
-                    elif "png" in content_type:
-                        ext = "png"
-                    elif "webp" in content_type:
-                        ext = "webp"
-                    else:
-                        ext = "jpg"  # Default to jpg
-
-                    # Save the image
-                    image_path = os.path.join(save_dir, f"{prefix}_{i + 1}.{ext}")
-                    with open(image_path, "wb") as f:
-                        for chunk in response.iter_content(chunk_size=8192):
-                            if chunk:  # Filter out keep-alive chunks
-                                f.write(chunk)
-
-                    print(f"Downloaded image: {image_path}")
+                    with open(file_path, "wb") as f:
+                        f.write(response.content)
+                    downloaded_files.append(filename)
+                    print(f"Downloaded {url} to {file_path}")
                 else:
                     print(
-                        f"Failed to download image, status code: {response.status_code}"
+                        f"Failed to download {url}, status code: {response.status_code}"
                     )
-
-                    # Try alternate URL format as fallback
-                    if (
-                        ".jpg_" in url
-                        or ".png_" in url
-                        or ".webp_" in url
-                        or ".avif" in url
-                    ):
-                        alt_url = url.replace("_220x220q75", "").replace("_.avif", "")
-                        print(f"Attempting alternate URL: {alt_url}")
-
-                        response = requests.get(
-                            alt_url, headers=headers, stream=True, timeout=30
-                        )
-                        if response.status_code == 200:
-                            # Check if response is actually an image
-                            content_type = response.headers.get("content-type", "")
-                            if not ("image" in content_type.lower()):
-                                print(f"Skipping non-image content: {content_type}")
-                                continue
-
-                            # Determine file extension
-                            if "jpeg" in content_type or "jpg" in content_type:
-                                ext = "jpg"
-                            elif "png" in content_type:
-                                ext = "png"
-                            elif "webp" in content_type:
-                                ext = "webp"
-                            else:
-                                ext = "jpg"  # Default to jpg
-
-                            # Save the image
-                            image_path = os.path.join(
-                                save_dir, f"{prefix}_{i + 1}.{ext}"
-                            )
-                            with open(image_path, "wb") as f:
-                                for chunk in response.iter_content(chunk_size=8192):
-                                    if chunk:
-                                        f.write(chunk)
-
-                            print(f"Downloaded image with alternate URL: {image_path}")
-
-            except requests.exceptions.RequestException as e:
-                print(f"Network error downloading image {url}: {e}")
             except Exception as e:
                 print(f"Error downloading image {url}: {e}")
+
+        return downloaded_files
+
+    def download_variant_images(self, product_data, folder_path):
+        """Download variant images with descriptive names based on variant properties"""
+        downloaded_files = []
+
+        # Create a mapping of image URLs to variant names for lookup
+        url_to_variant_info = {}
+
+        # Extract variant info for proper naming
+        if "variants" in product_data and product_data["variants"]:
+            for variant in product_data["variants"]:
+                if "image" in variant and variant["image"] and variant["image"].strip():
+                    # Store both property type and name for this image URL
+                    property_type = (
+                        variant.get("property_type", "").replace(":", "").strip()
+                    )
+                    name = variant.get("name", "").replace(":", "").strip()
+
+                    # Clean the variant name for use in filenames
+                    name = "".join(c if c.isalnum() or c in "- " else "_" for c in name)
+
+                    # Create a composite key for the image URL
+                    url_to_variant_info[variant["image"]] = {
+                        "property_type": property_type,
+                        "name": name,
+                    }
+
+        # Download each variant image with a descriptive name
+        for i, url in enumerate(product_data.get("variant_images", [])):
+            try:
+                # Default filename with index
+                filename = f"variant_{i + 1}.jpg"
+
+                # If we have variant info for this URL, use a more descriptive name
+                if url in url_to_variant_info:
+                    info = url_to_variant_info[url]
+                    property_type = info["property_type"]
+                    name = info["name"]
+
+                    if property_type and name:
+                        # Create a descriptive filename: "property_name.jpg"
+                        safe_name = name.replace(" ", "_")[:30]  # Limit length
+                        filename = f"{property_type}_{safe_name}.jpg"
+                    elif name:
+                        # Just use the name if property type is missing
+                        safe_name = name.replace(" ", "_")[:30]
+                        filename = f"variant_{safe_name}.jpg"
+
+                # Ensure filename is unique by adding an index if needed
+                base_name, ext = os.path.splitext(filename)
+                counter = 1
+                while os.path.exists(os.path.join(folder_path, filename)):
+                    filename = f"{base_name}_{counter}{ext}"
+                    counter += 1
+
+                file_path = os.path.join(folder_path, filename)
+
+                # Download the image
+                response = requests.get(url, headers=self.headers, timeout=30)
+                if response.status_code == 200:
+                    with open(file_path, "wb") as f:
+                        f.write(response.content)
+                    downloaded_files.append(filename)
+                    print(f"Downloaded variant {url} to {file_path}")
+                else:
+                    print(
+                        f"Failed to download variant {url}, status code: {response.status_code}"
+                    )
+            except Exception as e:
+                print(f"Error downloading variant image {url}: {e}")
+
+        return downloaded_files
 
     def random_sleep(self, min_seconds=2, max_seconds=8):
         """Sleep for a random amount of time to mimic human behavior"""
@@ -560,7 +533,7 @@ class AliExpressScraper:
             return self._create_error_product(product_url)
 
     def extract_product_details_selenium(self, product_url):
-        """Extract detailed information using Selenium with improved error handling"""
+        """Extract detailed information using Selenium with improved error handling and variant names"""
         try:
             # Store current window handle
             original_window = self.driver.current_window_handle
@@ -692,7 +665,7 @@ class AliExpressScraper:
                             if (src && src.trim() !== '') {
                                 // Clean up the src to get base image URL (remove size restrictions)
                                 src = src.split('_')[0];
-                                // Remove .avif or other format extensions
+                                // Remove .avif extension if present
                                 if (src.endsWith('.avif')) {
                                     src = src.slice(0, -5);
                                 }
@@ -789,42 +762,54 @@ class AliExpressScraper:
                 print(f"Error extracting main images with JS: {e}")
                 main_images = []
 
-            # Extract variant images - Updated for 2025 AliExpress structure based on the HTML snippet
+            # Extract variant names and images - Updated for 2025 AliExpress structure
+
+            # Update this section of the extract_product_details_selenium method
+
+            # Extract variant names and images - Updated for 2025 AliExpress structure
             try:
-                variant_images = self.driver.execute_script("""
-                    // Updated for 2025 structure - look for color/variant thumbnails
-                    var varImages = [];
+                variant_data = self.driver.execute_script("""
+                    // Updated for May 2025 structure based on the specific HTML pattern
+                    var variants = [];
                     
-                    // First try the specific 2025 structure from the HTML snippet
-                    var skuItemImages = document.querySelectorAll('.sku-item--box--Lrl6ZXB .sku-item--image--jMUnnGA img');
-                    if (skuItemImages && skuItemImages.length > 0) {
-                        for (var i = 0; i < skuItemImages.length; i++) {
-                            var src = skuItemImages[i].getAttribute('src');
-                            if (src && src.trim() !== '') {
-                                // Process URL to get base image
-                                src = src.split('_')[0];
-                                if (src.endsWith('.avif')) {
-                                    src = src.slice(0, -5);
-                                }
-                                if (!src.endsWith('.jpg') && !src.endsWith('.jpeg') && !src.endsWith('.png') && !src.endsWith('.webp')) {
-                                    src = src + '.jpg';
+                    // First try the specific 2025 structure with sku--wrap--xgoW06M and sku-item--wrap--t9Qszzx
+                    var skuProperties = document.querySelectorAll('.sku-item--property--HuasaIz');
+                    
+                    for (var j = 0; j < skuProperties.length; j++) {
+                        var propertyTitle = "";
+                        var propertyTitleElement = skuProperties[j].querySelector('.sku-item--title--Z0HLO87');
+                        if (propertyTitleElement) {
+                            propertyTitle = propertyTitleElement.textContent.trim();
+                            // Extract just the property type (e.g., "Color:" -> "Color")
+                            propertyTitle = propertyTitle.split(':')[0].trim();
+                        }
+                        
+                        // Find all items under this property
+                        // For image-based options like colors
+                        var imageItems = skuProperties[j].querySelectorAll('.sku-item--image--jMUnnGA');
+                        
+                        for (var i = 0; i < imageItems.length; i++) {
+                            var variantItem = {
+                                property_type: propertyTitle,
+                                name: "",
+                                image: ""
+                            };
+                            
+                            // Get image alt text as the name
+                            var imgElement = imageItems[i].querySelector('img');
+                            if (imgElement) {
+                                if (imgElement.getAttribute('alt')) {
+                                    variantItem.name = imgElement.getAttribute('alt').trim();
                                 }
                                 
-                                if (varImages.indexOf(src) === -1) {
-                                    varImages.push(src);
-                                }
-                            }
-                        }
-                    }
-                    
-                    // Also try the property-item selectors
-                    if (varImages.length === 0) {
-                        var propertyItems = document.querySelectorAll('.property-item--content--N2pGZlv img, .property-item--imgwrap--RVrqA7K img');
-                        if (propertyItems && propertyItems.length > 0) {
-                            for (var i = 0; i < propertyItems.length; i++) {
-                                var src = propertyItems[i].getAttribute('src');
-                                if (src && src.trim() !== '') {
-                                    // Process URL
+                                var src = imgElement.getAttribute('src');
+                                if (src) {
+                                    // Fix relative URLs
+                                    if (src.startsWith('//')) {
+                                        src = 'https:' + src;
+                                    }
+                                    
+                                    // Process URL to get base image
                                     src = src.split('_')[0];
                                     if (src.endsWith('.avif')) {
                                         src = src.slice(0, -5);
@@ -833,41 +818,88 @@ class AliExpressScraper:
                                         src = src + '.jpg';
                                     }
                                     
-                                    if (varImages.indexOf(src) === -1) {
-                                        varImages.push(src);
+                                    if (src.startsWith('http')) {
+                                        variantItem.image = src;
                                     }
                                 }
+                            }
+                            
+                            // Add variant if it has at least a name or image
+                            if (variantItem.name || variantItem.image) {
+                                variants.push(variantItem);
+                            }
+                        }
+                        
+                        // For text-based options like sizes
+                        var textItems = skuProperties[j].querySelectorAll('.sku-item--text--hYfAukP');
+                        
+                        for (var i = 0; i < textItems.length; i++) {
+                            var variantItem = {
+                                property_type: propertyTitle,
+                                name: "",
+                                image: ""
+                            };
+                            
+                            // Get the size text
+                            if (textItems[i].getAttribute('title')) {
+                                variantItem.name = textItems[i].getAttribute('title').trim();
+                            } else {
+                                var spanElement = textItems[i].querySelector('span');
+                                if (spanElement) {
+                                    variantItem.name = spanElement.textContent.trim();
+                                }
+                            }
+                            
+                            // Add variant if it has a name
+                            if (variantItem.name) {
+                                variants.push(variantItem);
                             }
                         }
                     }
                     
-                    // If no variant images found, try older selectors
-                    if (varImages.length === 0) {
-                        var variantSelectors = [
-                            '.sku-property-image img', 
-                            '.color-atc img', 
-                            '._3Kg4LJ img',
-                            '.sku-item img',
-                            '.sku-property-item img'
-                        ];
+                    // If no variants found yet, try the older selectors as fallback
+                    if (variants.length === 0) {
+                        // Previous code for older layouts
+                        var skuProperties = document.querySelectorAll('.sku-property, .property-item, .product-sku .sku-wrap .sku-property');
                         
-                        for (var j = 0; j < variantSelectors.length; j++) {
-                            var imgElements = document.querySelectorAll(variantSelectors[j]);
-                            if (imgElements.length > 0) {
-                                for (var i = 0; i < Math.min(imgElements.length, 10); i++) {
-                                    var src = imgElements[i].getAttribute('src') || imgElements[i].getAttribute('data-src');
-                                    // Try lazily loaded images
-                                    if (!src) {
-                                        src = imgElements[i].dataset.src || imgElements[i].dataset.lazyload;
-                                    }
-                                    
-                                    if (src && varImages.indexOf(src) === -1) {
+                        for (var j = 0; j < skuProperties.length; j++) {
+                            var propertyTitle = "";
+                            var propertyTitleElement = skuProperties[j].querySelector('.sku-title, .property-item--title, .sku-property-title');
+                            if (propertyTitleElement) {
+                                propertyTitle = propertyTitleElement.textContent.trim();
+                            }
+                            
+                            // Find all items under this property
+                            var items = skuProperties[j].querySelectorAll('.sku-item--box--Lrl6ZXB, .property-item--item, .sku-property-item');
+                            
+                            for (var i = 0; i < items.length; i++) {
+                                var variantItem = {
+                                    property_type: propertyTitle,
+                                    name: "",
+                                    image: ""
+                                };
+                                
+                                // Try to find the name from text content or title attribute
+                                var nameElement = items[i].querySelector('.sku-property-text');
+                                if (nameElement) {
+                                    variantItem.name = nameElement.textContent.trim();
+                                } else if (items[i].getAttribute('title')) {
+                                    variantItem.name = items[i].getAttribute('title').trim();
+                                } else if (items[i].getAttribute('data-name')) {
+                                    variantItem.name = items[i].getAttribute('data-name').trim();
+                                }
+                                
+                                // Find image if it exists
+                                var imgElement = items[i].querySelector('img');
+                                if (imgElement) {
+                                    var src = imgElement.getAttribute('src') || imgElement.getAttribute('data-src');
+                                    if (src) {
                                         // Fix relative URLs
                                         if (src.startsWith('//')) {
                                             src = 'https:' + src;
                                         }
                                         
-                                        // Process URL
+                                        // Process URL to get base image
                                         src = src.split('_')[0];
                                         if (src.endsWith('.avif')) {
                                             src = src.slice(0, -5);
@@ -876,22 +908,25 @@ class AliExpressScraper:
                                             src = src + '.jpg';
                                         }
                                         
-                                        // Add only if not already in the list and is a valid URL
-                                        if (src.startsWith('http') && varImages.indexOf(src) === -1) {
-                                            varImages.push(src);
+                                        if (src.startsWith('http')) {
+                                            variantItem.image = src;
                                         }
                                     }
                                 }
-                                if (varImages.length > 0) break;
+                                
+                                // Only add variants with either a name or an image
+                                if (variantItem.name || variantItem.image) {
+                                    variants.push(variantItem);
+                                }
                             }
                         }
                     }
                     
-                    return varImages;
+                    return variants;
                 """)
             except Exception as e:
-                print(f"Error extracting variant images with JS: {e}")
-                variant_images = []
+                print(f"Error extracting variant data with JS: {e}")
+                variant_data = []
 
             # Generate or extract product ID
             try:
@@ -926,9 +961,22 @@ class AliExpressScraper:
                 print(f"Error extracting SKU ID with JS: {e}")
                 sku_id = f"ALI-{random.randint(100000, 999999)}"
 
-            # Process the extracted images to ensure proper format
+            # Process the extracted images and create variant structure
             main_images = [self._fix_image_url(url) for url in main_images if url]
-            variant_images = [self._fix_image_url(url) for url in variant_images if url]
+
+            # Create a structured variant list with both images and names
+            variants = []
+            variant_images = []
+
+            for variant in variant_data:
+                if "image" in variant and variant["image"]:
+                    fixed_image = self._fix_image_url(variant["image"])
+                    variant["image"] = fixed_image
+                    variant_images.append(fixed_image)
+                    variants.append(variant)
+                elif "name" in variant and variant["name"]:
+                    # Include text-only variants too
+                    variants.append(variant)
 
             # Close product tab and switch back to original window
             self.driver.close()
@@ -942,12 +990,14 @@ class AliExpressScraper:
                 "product_id": sku_id,
                 "main_images": main_images,
                 "variant_images": variant_images,
+                "variants": variants,
             }
 
             print(f"Extracted product: {title}")
             print(
                 f"Images found: {len(main_images)} main, {len(variant_images)} variants"
             )
+            print(f"Variants found: {len(variants)}")
 
             return product_data
 
@@ -988,7 +1038,7 @@ class AliExpressScraper:
         return base_url
 
     def _create_error_product(self, product_url):
-        """Create a placeholder product when extraction fails"""
+        """Create a placeholder product when extraction fails, now with variants field"""
         return {
             "title": "Error fetching product",
             "price": "Unknown",
@@ -997,10 +1047,11 @@ class AliExpressScraper:
             "product_id": f"ERROR-{random.randint(10000, 99999)}",
             "main_images": [],
             "variant_images": [],
+            "variants": [],  # Added empty variants list
         }
-
+    
     def save_product(self, product_data):
-        """Save product data to a structured format on disk"""
+        """Save product data to a structured format on disk with variant information"""
         # Create product folder with sanitized name
         product_name = product_data["title"][:50].replace("/", "-").replace("\\", "-")
         product_name = "".join(
@@ -1033,26 +1084,111 @@ class AliExpressScraper:
             file.write(f"### Category\n{product_data.get('category', 'N/A')}\n\n")
             file.write(f"### Subcategory\n{product_data.get('subcategory', 'N/A')}\n\n")
             file.write(f"### Item Type\n{product_data.get('item_type', 'N/A')}\n\n")
+            
+            # Add variant information to text file with image file paths
+            file.write(f"### Variants\n")
+            if 'variants' in product_data and product_data['variants']:
+                for i, variant in enumerate(product_data['variants']):
+                    property_type = variant.get('property_type', 'N/A')
+                    name = variant.get('name', 'N/A')
+                    image_url = variant.get('image', 'N/A')
+                    
+                    # Create a descriptive filename for referencing in the info file
+                    image_filename = "No image"
+                    if image_url != 'N/A' and image_url:
+                        # Generate the same filename logic as in download_variant_images
+                        if property_type != 'N/A' and name != 'N/A':
+                            safe_name = name.replace(' ', '_')[:30]
+                            image_filename = f"{property_type}_{safe_name}.jpg"
+                        elif name != 'N/A':
+                            safe_name = name.replace(' ', '_')[:30]
+                            image_filename = f"variant_{safe_name}.jpg"
+                        else:
+                            image_filename = f"variant_{i+1}.jpg"
+                    
+                    file.write(f"- Variant {i+1}:\n")
+                    file.write(f"  Type: {property_type}\n")
+                    file.write(f"  Name: {name}\n")
+                    file.write(f"  Image URL: {image_url}\n")
+                    file.write(f"  Image File: {image_filename if image_url != 'N/A' and image_url else 'No image'}\n")
+            else:
+                file.write("No variant information available\n")
 
         # Also save as JSON for easier processing
         json_file_path = os.path.join(product_folder, "product_data.json")
         with open(json_file_path, "w", encoding="utf-8") as file:
             json.dump(product_data, file, indent=4, ensure_ascii=False)
 
-        # Download images
-        self.download_images(product_data["main_images"], product_main_images, "main")
-        self.download_images(
-            product_data["variant_images"], product_variant_images, "variant"
-        )
+        # Download main images with descriptive names if possible
+        main_image_files = self.download_images(product_data["main_images"], product_main_images, "main")
+        
+        # Add main image filenames to the JSON for reference
+        product_data["main_image_files"] = main_image_files
+        
+        # Download variant images with descriptive names
+        variant_image_files = []
+        if "variant_images" in product_data and product_data["variant_images"]:
+            variant_image_files = self.download_variant_images(product_data, product_variant_images)
+            
+        # Add variant image filenames to the JSON for reference
+        product_data["variant_image_files"] = variant_image_files
+        
+        # Update the JSON file with the new image filename information
+        with open(json_file_path, "w", encoding="utf-8") as file:
+            json.dump(product_data, file, indent=4, ensure_ascii=False)
 
         print(f"Saved product: {product_data['title']}")
         return product_folder
+
+def download_variant_images(self, product_data, save_dir):
+    """Download variant images with variant names as prefixes when available"""
+    variant_images = product_data.get("variant_images", [])
+    variants = product_data.get("variants", [])
+
+    # Create a mapping of image URLs to variant names
+    image_to_name = {}
+
+    # Build mapping from structured variant data
+    for variant in variants:
+        if (
+            "image" in variant
+            and variant["image"]
+            and "name" in variant
+            and variant["name"]
+        ):
+            # Use variant type and name as prefix
+            prefix = f"{variant['property_type']}_{variant['name']}"
+            # Sanitize prefix (replace invalid filename characters)
+            prefix = "".join(c if c.isalnum() or c in "- " else "_" for c in prefix)
+            image_to_name[variant["image"]] = prefix
+
+    # Download each image with contextual naming when available
+    for i, url in enumerate(variant_images):
+        try:
+            # Skip if URL is empty
+            if not url:
+                continue
+
+            # Use matched name as prefix if available, otherwise use generic prefix
+            prefix = image_to_name.get(url, f"variant")
+
+            # Add index to ensure uniqueness
+            prefix = f"{prefix}_{i + 1}"
+
+            # Download using helper method - passing single URL in list form
+            self.download_images([url], save_dir, prefix)
+
+        except Exception as e:
+            print(f"Error downloading variant image {url}: {e}")
 
 
 def scrape_all_categories(use_selenium=True, proxy=None):
     scraper = AliExpressScraper(output_dir="categories", use_selenium=use_selenium)
 
     try:
+        total_products = 0
+        target_products = 1000
+        products_per_category = 5
         category_structure = [
             {
                 "name": "Apparel & Fashion",
@@ -1424,9 +1560,6 @@ def scrape_all_categories(use_selenium=True, proxy=None):
         ]
 
         # Track progress
-        total_products = 0
-        target_products = 1000
-        products_per_category = 5
 
         # Iterate through the category structure
         for category in category_structure:
