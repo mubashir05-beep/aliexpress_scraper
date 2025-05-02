@@ -1055,31 +1055,254 @@ def scrape_all_categories(use_selenium=True, proxy=None):
     try:
         category_structure = [
             {
-                "name": "Sports & Outdoor",
+                "name": "Apparel & Fashion",
                 "subcategories": [
                     {
-                        "name": "Sportswear",
+                        "name": "Men's Clothing",
                         "items": [
-                            "Men's Sportswear",
-                            "Women's Sportswear",
-                            "Athletic Accessories",
+                            "T-Shirts",
+                            "Shirts",
+                            "Jeans",
+                            "Suits",
+                            "Jackets",
+                            "Underwear",
+                        ],
+                    },
+                    {
+                        "name": "Women's Clothing",
+                        "items": [
+                            "Dresses",
+                            "Tops",
+                            "Jeans",
+                            "Skirts",
+                            "Abayas",
+                            "Suits",
+                        ],
+                    },
+                    {
+                        "name": "Children's Clothing",
+                        "items": ["Babywear", "Boys' Clothing", "Girls' Clothing"],
+                    },
+                    {
+                        "name": "Fashion Accessories",
+                        "items": [
+                            "Belts",
+                            "Scarves",
+                            "Hats",
+                            "Sunglasses",
+                            "Gloves",
+                            "Ties",
                         ],
                     },
                     {
                         "name": "Footwear",
-                        "items": [],
+                        "items": [
+                            "Men's",
+                            "Women's",
+                            "Kids'",
+                            "Sports",
+                            "Formal",
+                            "Casual",
+                        ],
+                    },
+                ],
+            },
+            {
+                "name": "Electronics & Appliances",
+                "subcategories": [
+                    {
+                        "name": "Consumer Electronics",
+                        "items": ["Smartphones", "TVs", "Cameras", "Audio Equipment"],
                     },
                     {
-                        "name": "Fitness Gear",
-                        "items": [],
+                        "name": "Home Appliances",
+                        "items": [
+                            "Refrigerators",
+                            "Washing Machines",
+                            "Ovens",
+                            "Microwaves",
+                        ],
                     },
                     {
-                        "name": "Camping & Hiking",
-                        "items": [],
+                        "name": "Computer & Office Equipment",
+                        "items": [
+                            "Laptops",
+                            "Monitors",
+                            "Printers",
+                            "Networking Devices",
+                        ],
+                    },
+                    {
+                        "name": "Electrical Components",
+                        "items": ["Cables", "Switches", "Batteries", "Lighting"],
+                    },
+                ],
+            },
+            {
+                "name": "Home & Garden",
+                "subcategories": [
+                    {
+                        "name": "Furniture",
+                        "items": ["Living Room", "Bedroom", "Outdoor", "Office"],
+                    },
+                    {
+                        "name": "Home Decor",
+                        "items": ["Wall Art", "Clocks", "Curtains", "Rugs", "Mirrors"],
+                    },
+                    {
+                        "name": "Kitchenware",
+                        "items": [
+                            "Cookware",
+                            "Utensils",
+                            "Storage",
+                            "Small Appliances",
+                        ],
+                    },
+                    {
+                        "name": "Gardening Supplies",
+                        "items": ["Pots", "Plants", "Seeds", "Tools", "Irrigation"],
+                    },
+                    {
+                        "name": "Cleaning & Utility",
+                        "items": ["Tools", "Supplies", "Vacuums", "Organizers"],
+                    },
+                ],
+            },
+            {
+                "name": "Beauty & Personal Care",
+                "subcategories": [
+                    {
+                        "name": "Skincare",
+                        "items": ["Creams", "Serums", "Face Wash", "Masks"],
+                    },
+                    {
+                        "name": "Haircare",
+                        "items": ["Shampoos", "Conditioners", "Styling Products"],
+                    },
+                    {
+                        "name": "Makeup",
+                        "items": ["Lipstick", "Foundation", "Eyeshadow", "Brushes"],
+                    },
+                    {
+                        "name": "Fragrances",
+                        "items": ["Perfumes", "Colognes", "Deodorants"],
+                    },
+                    {
+                        "name": "Personal Hygiene",
+                        "items": ["Soaps", "Sanitary Products", "Toothpaste", "Razors"],
+                    },
+                ],
+            },
+            {
+                "name": "Health & Wellness",
+                "subcategories": [
+                    {
+                        "name": "Vitamins & Supplements",
+                        "items": ["Vitamins & Supplements"],
+                    },
+                    {
+                        "name": "Medical Supplies",
+                        "items": ["PPE", "Thermometers", "First Aid Kits"],
+                    },
+                    {
+                        "name": "Fitness Equipment",
+                        "items": ["Weights", "Yoga Mats", "Resistance Bands"],
+                    },
+                    {
+                        "name": "Herbal & Natural Remedies",
+                        "items": ["Herbal & Natural Remedies"],
+                    },
+                    {
+                        "name": "Massage & Relaxation Tools",
+                        "items": ["Massage & Relaxation Tools"],
+                    },
+                ],
+            },
+            {
+                "name": "Food & Beverages",
+                "subcategories": [
+                    {
+                        "name": "Packaged Foods",
+                        "items": [
+                            "Snacks",
+                            "Canned Goods",
+                            "Cereals",
+                            "Instant Noodles",
+                        ],
+                    },
+                    {
+                        "name": "Beverages",
+                        "items": [
+                            "Tea",
+                            "Coffee",
+                            "Juices",
+                            "Soft Drinks",
+                            "Energy Drinks",
+                        ],
+                    },
+                    {
+                        "name": "Fresh Produce",
+                        "items": ["Fruits", "Vegetables", "Meat", "Seafood"],
+                    },
+                    {
+                        "name": "Gourmet & Organic Foods",
+                        "items": ["Gourmet & Organic Foods"],
+                    },
+                    {"name": "Spices & Condiments", "items": ["Spices & Condiments"]},
+                ],
+            },
+            {
+                "name": "Baby & Kids",
+                "subcategories": [
+                    {
+                        "name": "Baby Clothing & Accessories",
+                        "items": ["Baby Clothing & Accessories"],
+                    },
+                    {"name": "Diapers & Wipes", "items": ["Diapers & Wipes"]},
+                    {
+                        "name": "Feeding Supplies",
+                        "items": ["Bottles", "Sippy Cups", "Food Warmers"],
+                    },
+                    {"name": "Toys & Games", "items": ["Toys & Games"]},
+                    {
+                        "name": "Strollers, Car Seats, Furniture",
+                        "items": ["Strollers, Car Seats, Furniture"],
+                    },
+                ],
+            },
+            {
+                "name": "Toys, Hobbies & DIY",
+                "subcategories": [
+                    {"name": "Educational Toys", "items": ["Educational Toys"]},
+                    {"name": "Outdoor Toys", "items": ["Outdoor Toys"]},
+                    {
+                        "name": "Board Games & Puzzles",
+                        "items": ["Board Games & Puzzles"],
+                    },
+                    {
+                        "name": "DIY Tools",
+                        "items": ["Power Tools", "Hand Tools", "Kits"],
+                    },
+                    {
+                        "name": "Craft Supplies",
+                        "items": ["Paint", "Beads", "Fabrics", "Brushes"],
+                    },
+                ],
+            },
+            {
+                "name": "Sports & Outdoor",
+                "subcategories": [
+                    {"name": "Sportswear", "items": ["Sportswear"]},
+                    {"name": "Footwear", "items": ["Footwear"]},
+                    {"name": "Fitness Gear", "items": ["Fitness Gear"]},
+                    {"name": "Camping & Hiking", "items": ["Camping & Hiking"]},
+                    {
+                        "name": "Bicycles & Accessories",
+                        "items": ["Bicycles & Accessories"],
                     },
                     {
                         "name": "Team Sports Equipment",
-                        "items": [],
+                        "items": ["Team Sports Equipment"],
                     },
                 ],
             },
@@ -1092,19 +1315,16 @@ def scrape_all_categories(use_selenium=True, proxy=None):
                     },
                     {
                         "name": "Motorbike Accessories",
-                        "items": [],
+                        "items": ["Motorbike Accessories"],
                     },
                     {
                         "name": "Car Electronics",
-                        "items": [],
+                        "items": ["Stereos", "Dashcams", "GPS"],
                     },
-                    {
-                        "name": "Oils & Fluids",
-                        "items": [],
-                    },
+                    {"name": "Oils & Fluids", "items": ["Oils & Fluids"]},
                     {
                         "name": "Car Care & Maintenance",
-                        "items": [],
+                        "items": ["Car Care & Maintenance"],
                     },
                 ],
             },
@@ -1113,53 +1333,30 @@ def scrape_all_categories(use_selenium=True, proxy=None):
                 "subcategories": [
                     {
                         "name": "Construction Equipment",
-                        "items": ["Heavy Machinery", "Construction Tools", "Materials"],
+                        "items": ["Construction Equipment"],
                     },
-                    {
-                        "name": "Manufacturing Tools",
-                        "items": [
-                            "CNC Equipment",
-                            "Assembly Tools",
-                            "Measurement Tools",
-                        ],
-                    },
-                    {
-                        "name": "Farming Equipment",
-                        "items": [
-                        ],
-                    },
-                    {
-                        "name": "Safety Gear",
-                        "items": [],
-                    },
+                    {"name": "Manufacturing Tools", "items": ["Manufacturing Tools"]},
+                    {"name": "Farming Equipment", "items": ["Farming Equipment"]},
+                    {"name": "Safety Gear", "items": ["Safety Gear"]},
                     {
                         "name": "Pipes, Valves & Fittings",
-                        "items": [],
+                        "items": ["Pipes, Valves & Fittings"],
                     },
                 ],
             },
             {
                 "name": "Office & School Supplies",
                 "subcategories": [
-                    {
-                        "name": "Stationery",
-                        "items": ["Pens", "Paper", "Notebooks", "Writing Supplies"],
-                    },
-                    {
-                        "name": "Office Furniture",
-                        "items": [],
-                    },
-                    {
-                        "name": "Printers & Supplies",
-                        "items": [],
-                    },
+                    {"name": "Stationery", "items": ["Stationery"]},
+                    {"name": "Office Furniture", "items": ["Office Furniture"]},
+                    {"name": "Printers & Supplies", "items": ["Printers & Supplies"]},
                     {
                         "name": "School Backpacks & Kits",
-                        "items": [],
+                        "items": ["School Backpacks & Kits"],
                     },
                     {
-                        "name": "Notebooks & Filing",
-                        "items": [],
+                        "name": "Notebooks, Files & Folders",
+                        "items": ["Notebooks, Files & Folders"],
                     },
                 ],
             },
@@ -1167,72 +1364,39 @@ def scrape_all_categories(use_selenium=True, proxy=None):
                 "name": "Jewelry & Watches",
                 "subcategories": [
                     {
-                        "name": "Precious Metals Jewelry",
-                        "items": ["Gold", "Silver", "Platinum"],
+                        "name": "Gold, Silver, Platinum",
+                        "items": ["Gold, Silver, Platinum"],
                     },
-                    {
-                        "name": "Fashion Jewelry",
-                        "items": [
-                        ],
-                    },
-                    {
-                        "name": "Watches",
-                        "items": [],
-                    },
-                    {
-                        "name": "Body Jewelry",
-                        "items": [],
-                    },
+                    {"name": "Fashion Jewelry", "items": ["Fashion Jewelry"]},
+                    {"name": "Watches", "items": ["Smartwatches", "Luxury", "Casual"]},
+                    {"name": "Body Jewelry", "items": ["Body Jewelry"]},
                     {
                         "name": "Custom & Handmade Pieces",
-                        "items": [
-                        ],
+                        "items": ["Custom & Handmade Pieces"],
                     },
                 ],
             },
             {
                 "name": "Luggage & Travel",
                 "subcategories": [
-                    {
-                        "name": "Suitcases & Bags",
-                        "items": [
-                            "Hardshell Luggage",
-                            "Softside Luggage",
-                            "Travel Bags",
-                        ],
-                    },
-                    {
-                        "name": "Backpacks",
-                        "items": ["Travel Backpacks", "Hiking Backpacks", "Day Packs"],
-                    },
+                    {"name": "Suitcases & Bags", "items": ["Suitcases & Bags"]},
+                    {"name": "Backpacks", "items": ["Backpacks"]},
                     {
                         "name": "Travel Accessories",
-                        "items": [],
+                        "items": ["Adapters", "Organizers", "Locks"],
                     },
                 ],
             },
             {
                 "name": "Pet Supplies",
                 "subcategories": [
-                    {
-                        "name": "Dog Supplies",
-                        "items": ["Dog Food", "Dog Toys", "Dog Accessories"],
-                    },
-                    {
-                        "name": "Cat Supplies",
-                        "items": [],
-                    },
-                    {
-                        "name": "Pet Food",
-                        "items": [],
-                    },
-                    {
-                        "name": "Pet Toys & Grooming",
-                        "items": [],
-                    },
+                    {"name": "Dog Supplies", "items": ["Dog Supplies"]},
+                    {"name": "Cat Supplies", "items": ["Cat Supplies"]},
+                    {"name": "Pet Food", "items": ["Pet Food"]},
+                    {"name": "Pet Toys & Grooming", "items": ["Pet Toys & Grooming"]},
                     {
                         "name": "Aquarium & Bird Supplies",
-                        "items": [],
+                        "items": ["Aquarium & Bird Supplies"],
                     },
                 ],
             },
@@ -1246,24 +1410,14 @@ def scrape_all_categories(use_selenium=True, proxy=None):
                             "Eid",
                             "Diwali",
                             "Chinese New Year",
-                            "Valentine's Day",
                         ],
                     },
-                    {
-                        "name": "Party Supplies",
-                        "items": [],
-                    },
-                    {
-                        "name": "Gift Wrapping",
-                        "items": [],
-                    },
-                    {
-                        "name": "Customizable Gifts",
-                        "items": [],
-                    },
+                    {"name": "Party Supplies", "items": ["Party Supplies"]},
+                    {"name": "Gift Wrapping", "items": ["Gift Wrapping"]},
+                    {"name": "Customizable Gifts", "items": ["Customizable Gifts"]},
                     {
                         "name": "Wedding & Event Decor",
-                        "items": [],
+                        "items": ["Wedding & Event Decor"],
                     },
                 ],
             },
@@ -1271,8 +1425,8 @@ def scrape_all_categories(use_selenium=True, proxy=None):
 
         # Track progress
         total_products = 0
-        target_products = 380
-        products_per_category = 2  # Adjust to get enough products
+        target_products = 1000
+        products_per_category = 5
 
         # Iterate through the category structure
         for category in category_structure:
